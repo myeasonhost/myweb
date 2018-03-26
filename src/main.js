@@ -5,7 +5,6 @@ import store from './store';
 // import './mock/index.js';  // 该项目所有请求使用mockjs模拟
 import './login.js'
 import './ui.js'
-import './socket.js'
 
 //var str = "js实现用{two}自符串替换占位符{two} {three}  {one} ".format({one: "I",two: "LOVE",three: "YOU"});
 //var str2 = "js实现用{1}自符串替换占位符{1} {2}  {0} ".format("I","LOVE","YOU");

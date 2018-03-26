@@ -4,6 +4,14 @@
 
 <script>
     export default{
-      name: 'APP'
+        name: 'APP',
+        mounted() {
+            this.socketConnect();
+        },
+        methods: {
+            socketConnect() {
+                this.$store.dispatch('SocketConnect');
+            }
+        }
     }
 </script>

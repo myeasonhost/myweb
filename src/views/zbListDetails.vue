@@ -42,8 +42,7 @@
                            loop=true 自动循环
                            data-setup='{"example_option":true}' 可以把一些属性写到这个里面来，如data-setup={"autoplay":true}
                    -->
-                   <video id="room-video" class="room-video video-js vjs-default-skin vjs-big-play-centered" x-webkit-airplay="allow"
-                          webkit-playsinline playsinline x5-video-player-type="h5"
+                   <video id="room-video" class="room-video video-js vjs-default-skin vjs-big-play-centered" x-webkit-airplay="allow" poster="" webkit-playsinline playsinline x5-video-player-type="h5"
                           x5-video-player-fullscreen="true" preload="auto"  autoplay  controls
                           :poster="item.roomBackgroundImg" >
 
@@ -57,9 +56,10 @@
                </div>
 
                <form  onsubmit="return false;">
-                   <input id="msg" class="input-xlarge" type="text" placeholder="Type something..."/>
-                   <button type="button" @click="sendMessage()" class="btn" id="send">Send</button>
-                   <button type="button" onClick="sendDisconnect()" class="btn">Disconnect</button>
+                   <input id="msg" class="input-xlarge" type="text" placeholder="请输入消息···" maxlength="50" />
+                   <button type="button" @click="sendMessage()" class="btn" id="send">发送</button>
+                   <button type="button" @click="createRoom()" class="btn">创建房间</button>
+                   <button type="button" @click="destoryRoom()" class="btn">销毁房间</button>
                </form>
            </div>
        </div>
@@ -70,6 +70,8 @@
     import { enterRoom } from 'api/zb-list';
     import {decrypt} from "api/AES";
     import {formatTime} from "utils/index";
+    // import videojs from 'video.js';
+    // import  "videojs-contrib-hls";
 
 export default {
   components:{},
@@ -83,16 +85,35 @@ export default {
         methods:{
             runPlay(play_url){
                 var player = videojs('room-video',{
+                    bigPlayButton : false,
+                    textTrackDisplay : false,
+                    posterImage: false,
+                    errorDisplay : false,
+                    controlBar : {
+                        captionsButton : false,
+                        chaptersButton: false,
+                        subtitlesButton:false,
+                        liveDisplay:false,
+                        playbackRateMenuButton:false
+                    },
                     sources: [{
-                            src: play_url,
-                            type: "application/x-mpegURL"
+                            // src: "http://118.193.141.13:8080/vlive1/rec1/rec1.m3u8",
+                            // type: "application/x-mpegURL",
+                            src:    "http://ws4.stream.huya.com/hqlive/78941969-2559461593-10992803837303062528-2693342886-10057-A-1518951907-1.flv?wsSecret=684224bcb90de54ccbaad7b136576df0&wsTime=5ab22152&ratio=2000",
+                            type: "video/flv"
                         }]
+                },function(){
+                    this.on('loadedmetadata',function(){
+                        console.log('loadedmetadata');
+                        //加载到元数据后开始播放视频
+                        // startVideo();
+                        this.play();
+                    });
+
                 });
                 player.play();
             },
-            enterRoom(){
-                var afterUrl =  window.location.hash.substring(window.location.hash.indexOf("?")).substring(1);//(问号以后的字符串)
-                var roomId = afterUrl.substring(afterUrl.indexOf('=')+1).toUpperCase();//(等号以后的字符串，及你所要的参数)
+            enterRoom(roomId){
                 enterRoom(roomId, this.$store.getters.token).then(response => {
                     const data = response.data;
                     if(data.status==0){
@@ -100,18 +121,33 @@ export default {
                         this.play_url=decrypt(this.item.media.play_url);
                         console.log("===="+this.play_url);
                         this.runPlay(this.play_url);
+                    }else if(data.status==401 || data.status==500){
+                        this.runPlay(this.play_url);
+                        throw  {name: data.status, message: data.message};
                     }
                 }).catch(error => {
                     console.info(error);
-                    vue.$Message.error({
-                        message: error.message,
+                    this.$Message.error({
+                        content: error.message,
                         duration: 5 * 1000,
                         closable: true
                     });
-                    if (error){
-                        Promise.reject(error);
-                    }
+                    // if (error){
+                    //     Promise.reject(error);
+                    // }
                 });
+            },
+            createRoom(){
+                var jsonObject = {roomId: '1',
+                    roomName: '1',
+                    roomTitle: "1的房间"};
+                this.$socket.emit('createRoom', jsonObject);
+            },
+            destoryRoom(){
+                var jsonObject = {roomId: '1',
+                    roomName: '1',
+                    roomTitle: "1的房间"};
+                this.$socket.emit('destoryRoom', jsonObject);
             },
             output(message) {
                 var currentTime = "<span <span style=\"color:royalblue;\">" +  formatTime(Date.now(),true) + "</span>";
@@ -120,12 +156,16 @@ export default {
             },
             sendMessage(){
                 var message = $('#msg').val();
+                if (message==""){
+                    $('#msg').focus();
+                    return ;
+                }
                 $('#msg').val('');
 
                 var jsonObject = {sourceClientId: 'testclient1',
                     msgType: 'chat',
                     msgContent: message};
-                this.$socket.emit('messageevent', jsonObject);
+                this.$socket.emit('sendMsg', jsonObject);
                 // this.$store.dispatch('socket_messageevent', jsonObject).then((data) => {
                 //     this.$Message.success("登陆成功");
                 // });
@@ -133,17 +173,24 @@ export default {
         },
         sockets: {
             connect(){
-                this.output('<span style="color:green;">Client has connected to the server!</span>');
+                this.output('<span style="color:green;">聊天室连接成功</span>');
             },
             disconnect(){
-                this.output('<span style="color:red;">The client has disconnected!</span>');
+                this.output('<span style="color:red;">聊天室中断，正在重新连接...</span>');
             },
-            messageevent(data){
+            sendMsg(data){
                 this.output('<span style="color:orange;">' + data.sourceClientId + ':</span> ' + data.msgContent);
             }
         },
         mounted(){
-            this.enterRoom();
+            var afterUrl =  window.location.hash.substring(window.location.hash.indexOf("?")).substring(1);//(问号以后的字符串)
+            var roomId = afterUrl.substring(afterUrl.indexOf('=')+1).toUpperCase();//(等号以后的字符串，及你所要的参数)
+            this.enterRoom(roomId);
+
+            this.$options.sockets.sendMsg = (data) => {
+                console.log(data);
+            };
+
         }
 }
 </script>
@@ -154,12 +201,12 @@ export default {
         flex-direction: row;
     }
     .h-panel .media-body{
-        width: 40%;
+        width: 66%;
     }
     .h-panel .media-body .room-video{
         margin-top: 15px;
         width: 100%;
-        height: 600px;
+        height: 620px;
     }
     .h-panel .media-body .panel {
         background-color: #b30b64;
@@ -172,7 +219,11 @@ export default {
         display: -webkit-flex; /* Safari */
     }
     .h-panel .chat-room{
-        margin: 10px  0px ;
+        margin: 0px 10px;
+        padding: 10px 10px;
+        background-color: #f4f;
+        border-radius: 4px;
+        width: 34%;
         display: flex;
         flex-direction: column;
     }
@@ -266,7 +317,8 @@ export default {
     }
 
     #console {
-        height: 400px;
+        height: 95%;
+        width: 100%;
         overflow: auto;
     }
 
