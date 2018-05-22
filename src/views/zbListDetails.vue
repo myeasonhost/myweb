@@ -97,9 +97,9 @@ export default {
                         playbackRateMenuButton:false
                     },
                     sources: [{
-                            // src: "http://118.193.141.13:8080/vlive1/rec1/rec1.m3u8",
+                            // src: "https://logos-channel.scaleengine.net/logos-channel/live/biblescreen-ad-free/playlist.m3u8",
                             // type: "application/x-mpegURL",
-                            src:    "http://ws4.stream.huya.com/hqlive/78941969-2559461593-10992803837303062528-2693342886-10057-A-1518951907-1.flv?wsSecret=684224bcb90de54ccbaad7b136576df0&wsTime=5ab22152&ratio=2000",
+                            src:   play_url ,
                             type: "video/flv"
                         }]
                 },function(){

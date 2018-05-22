@@ -46,8 +46,8 @@ const socket = {
         SocketConnect: (context, status) => {
             if (!Vue.prototype.$socket) {
                 console.log(process.env.SOCKET_API);
-                // Vue.use(VueSocketio, socketio(process.env.SOCKET_API), store);
-                Vue.use(VueSocketio, process.env.SOCKET_API+"/chat1", store);
+                Vue.use(VueSocketio, socketio(process.env.SOCKET_API), store);
+                // Vue.use(VueSocketio, process.env.SOCKET_API+"/chat1", store);
             } else {
                 Vue.prototype.$socket.query.access_token = Cookies.get('token');
                 Vue.prototype.$socket.query.mobile = Cookies.get('mobile');
