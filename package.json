@@ -1,9 +1,9 @@
 {
-  "name": "WZ",
+  "name": "eason",
   "version": "1.0.0",
-  "description": "WZ base on Vue.js",
-  "author": "herozhou <zhouhero@hotmail.com>",
-  "license": "MIT",
+  "description": "eason base on Vue.js",
+  "author": "eason <myeasonhost@gmail.com>",
+  "license": "EASON",
   "private": false,
   "scripts": {
     "dev": "node build/dev-server.js",
